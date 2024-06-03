@@ -38,30 +38,29 @@ const app = express();
     });
   });
 
+  app.get('/contacts/:contactId', async (req, res) => {
+    const { contactId } = req.params;
 
-app.get('/contacts/:contactId', async (req, res) => {
-  const { contactId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(contactId)) {
+      return res.status(404).json({
+        status: 404,
+        message: `Contact with id ${contactId} not found`,
+      });
+    }
+    
+    const contact = await getContactById(contactId);
+    if (!contact) {
+      return res.status(404).json({
+        status: 404,
+        message: `Contact with id ${contactId} not found!`,
+       });
+     }
 
-  if (!mongoose.Types.ObjectId.isValid(contactId)) {
-    return res.status(404).json({
-      status: 404,
-      message: `Contact with id ${contactId} not found`,
+    res.status(200).json({
+      data: contact,
     });
-  }
 
-  const contact = await ContactsCollection.findById(contactId);
-  if (!contact) {
-    return res.status(404).json({
-      status: 404,
-      message: `Contact with id ${contactId} not found!`,
-    });
-  }
-
-  res.status(200).json({
-    status: 200,
-    data: contact,
   });
-});
 
 
   app.use('*', (req, res, next) => {
