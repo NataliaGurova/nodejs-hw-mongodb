@@ -1,9 +1,14 @@
 import createHttpError from 'http-errors';
 import { createContact, deleteContact, getAllContacts, getContactById, updateContact } from '../services/contacts.js';
-import mongoose from 'mongoose';
+import { parsePaginationParams } from '../utils/parsePaginationParams.js';
+// import mongoose from 'mongoose';
 
 export const getContactsController = async (req, res) => {
-    const contacts = await getAllContacts();
+   const { page, perPage } = parsePaginationParams(req.query);
+    const contacts = await getAllContacts({
+    page,
+    perPage,
+  });
 
     res.json({
       status: 200,
@@ -15,13 +20,13 @@ export const getContactsController = async (req, res) => {
 export const getContactByIdController = async (req, res, next) => {
   const { contactId } = req.params;
 
-  // Додаємо обробку помилки валідації id
-  if (!mongoose.Types.ObjectId.isValid(contactId)) {
-    return res.status(404).json({
-      status: 404,
-      message: "Invalid contact ID format!",
-    });
-  }
+  // // Додаємо обробку помилки валідації id
+  // if (!mongoose.Types.ObjectId.isValid(contactId)) {
+  //   return res.status(404).json({
+  //     status: 404,
+  //     message: "Invalid contact ID format!",
+  //   });
+  // }
 
   const contact = await getContactById(contactId);
   	// Додаємо базову обробку помилки
@@ -52,13 +57,13 @@ export const createContactController = async (req, res) => {
 export const deleteContactController = async (req, res, next) => {
   const { contactId } = req.params;
 
-  // Додаємо обробку помилки валідації id
-  if (!mongoose.Types.ObjectId.isValid(contactId)) {
-    return res.status(404).json({
-      status: 404,
-      message: "Invalid contact ID format!",
-    });
-  }
+  // // Додаємо обробку помилки валідації id
+  // if (!mongoose.Types.ObjectId.isValid(contactId)) {
+  //   return res.status(404).json({
+  //     status: 404,
+  //     message: "Invalid contact ID format!",
+  //   });
+  // }
 
   const contact = await deleteContact(contactId);
   // Додаємо базову обробку помилки
