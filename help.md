@@ -414,3 +414,410 @@ app.get('/contacts/:contactId', async (req, res) => {
     data: contact,
   });
 });
+
+
+==============================================================
+СТВОРЕННЯ СОРТУВАННЯ
+
+Для сортування спочатку створимо константу sortOrder для параметрів запиту:
+
+// src/constants/index.js
+
+**export const SORT_ORDER = {
+  ASC: 'asc',
+  DESC: 'desc',
+};**
+
+
+
+Як і для пагінації, напишімо парсер квері параметрів для сортування:
+
+// src/utils/parseSortParams.js
+
+import { SORT_ORDER } from "../constants/index.js";
+
+const parseSortOrder = (sortOrder) => {
+  const isKnownOrder = [SORT_ORDER.ASC, SORT_ORDER.DESC].includes(sortOrder);
+  if (isKnownOrder) return sortOrder;
+  return SORT_ORDER.ASC;
+};
+
+const parseSortBy = (sortBy) => {
+  const keysOfStudent = [
+    '_id',
+    'name',
+    'age',
+    'gender',
+    'avgMark',
+    'onDuty',
+    'createdAt',
+    'updatedAt',
+  ];
+
+  if (keysOfStudent.includes(sortBy)) {
+    return sortBy;
+  }
+
+  return '_id';
+};
+
+export const parseSortParams = (query) => {
+  const { sortOrder, sortBy } = query;
+
+  const parsedSortOrder = parseSortOrder(sortOrder);
+  const parsedSortBy = parseSortBy(sortBy);
+
+  return {
+    sortOrder: parsedSortOrder,
+    sortBy: parsedSortBy,
+  };
+};
+
+
+
+Цей парсер використовується для обробки та стандартизації параметрів сортування, які можуть бути вказані у запиті до сервера. Він складається з двох головних частин: parseSortOrder і parseSortBy.
+
+
+
+Функція parseSortOrder приймає параметр sortOrder та перевіряє, чи відповідає він одному з відомих порядків сортування — або зростанню (ASC), або спаданню (DESC). Якщо вказаний порядок сортування входить до цього списку, функція повертає його. Якщо порядок сортування не відомий або відсутній, за замовчуванням функція встановлює порядок сортування на зростання (ASC).
+
+
+
+Функція parseSortBy приймає параметр sortBy, який має вказувати поле, за яким потрібно виконати сортування в базі даних студентів. Вона перевіряє, чи входить дане поле до списку допустимих полів (наприклад, _id, name, age тощо).
+
+
+
+Якщо поле входить до цього списку, вона повертає його. Якщо ж ні — за замовчуванням повертається поле _id.
+
+
+
+Загальна функція parseSortParams, яка експортується з модуля, інтегрує обидві ці функції. Вона приймає об'єкт query, з якого витягує значення sortOrder та sortBy, передає їх на обробку у відповідні функції та повертає об'єкт із валідованими та готовими до використання параметрами для сортування. Це дозволяє забезпечити консистентність і надійність обробки запитів сортування, забезпечуючи, що сервер завжди працює з коректними та очікуваними даними.
+
+
+
+Модифікуємо тепер код контролеру:
+
+
+
+// src/controllers/students.js
+
+import { parseSortParams } from '../utils/parseSortParams.js';
+
+/* Решта коду файла */
+
+export const getStudentsController = async (req, res) => {
+  const { page, perPage } = parsePaginationParams(req.query);
+
+  const { sortBy, sortOrder } = parseSortParams(req.query);
+
+  const students = await getAllStudents({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+  });
+
+  res.json({
+    status: 200,
+    message: 'Successfully found students!',
+    data: students,
+  });
+};
+
+
+
+Модифікуємо код сервісу:
+
+
+
+// src/services/students.js
+
+import { SORT_ORDER } from '../constants/index.js';
+
+/* Решта коду файла */
+
+export const getAllStudents = async ({
+  page = 1,
+  perPage = 10,
+  sortOrder = SORT_ORDER.ASC,
+  sortBy = '_id',
+}) => {
+  const limit = perPage;
+  const skip = (page - 1) * perPage;
+
+  const studentsQuery = StudentsCollection.find();
+  const studentsCount = await StudentsCollection.find()
+    .merge(studentsQuery)
+    .countDocuments();
+
+  const students = await studentsQuery
+    .skip(skip)
+    .limit(limit)
+    .sort({ [sortBy]: sortOrder })
+    .exec();
+
+  const paginationData = calculatePaginationData(studentsCount, perPage, page);
+
+  return {
+    data: students,
+    ...paginationData,
+  };
+};
+
+
+
+Тепер ми маємо можливість сортувати результати запиту до бази даних студентів. Параметри sortOrder та sortBy, визначені зі значеннями за замовчуванням, дозволяють визначити порядок сортування та поле, за яким потрібно виконати сортування (_id за замовчуванням).
+
+
+
+Під час виклику функції, studentsQuery — запит до бази даних, що ініціюється за допомогою StudentsCollection.find(), налаштовується так, що він тепер включає, окрім методів skip та limit (для реалізації пагінації), ще й метод sort. Цей метод дозволяє організувати записи за полем, вказаним у sortBy, у порядку, заданому
+
+у sortOrder. Таке сортування дозволяє користувачам отримувати дані в порядку, який найкраще відповідає їхнім потребам, забезпечуючи більшу гнучкість та зручність у взаємодії з даними.
+
+
+
+Невелике демо щодо того, як цей функціонал працює:
+
+
+===================================================
+СТВОРЕННЯ ФІЛЬТРІВ
+Як і в попередніх випадках, напишемо парсер квері параметрів для фільтрації:
+
+// src/utils/parseFilterParams.js
+
+const parseGender = (gender) => {
+  const isString = typeof gender === 'string';
+  if (!isString) return;
+  const isGender = (gender) => ['male', 'female', 'other'].includes(gender);
+
+  if (isGender(gender)) return gender;
+};
+
+const parseNumber = (number) => {
+  const isString = typeof number === 'string';
+  if (!isString) return;
+
+  const parsedNumber = parseInt(number);
+  if (Number.isNaN(parsedNumber)) {
+    return;
+  }
+
+  return parsedNumber;
+};
+
+export const parseFilterParams = (query) => {
+  const { gender, maxAge, minAge, maxAvgMark, minAvgMark } = query;
+
+  const parsedGender = parseGender(gender);
+  const parsedMaxAge = parseNumber(maxAge);
+  const parsedMinAge = parseNumber(minAge);
+  const parsedMaxAvgMark = parseNumber(maxAvgMark);
+  const parsedMinAvgMark = parseNumber(minAvgMark);
+
+  return {
+    gender: parsedGender,
+    maxAge: parsedMaxAge,
+    minAge: parsedMinAge,
+    maxAvgMark: parsedMaxAvgMark,
+    minAvgMark: parsedMinAvgMark,
+  };
+};
+
+
+
+Цей код включає функції для парсингу параметрів фільтрації, які можуть бути
+
+використані для обробки запитів до бази даних, особливо коли мова йде про відбір даних на основі специфічних критеріїв. Кожна функція має своє спеціалізоване призначення.
+
+
+
+Функція parseGender перевіряє, чи введене значення статі є рядком та чи входить воно до дозволеного списку значень (male, female, other). Якщо вхідне значення відповідає цим умовам, воно повертається; інакше функція повертає undefined, що може вказувати на відсутність чи невалідність даних.
+
+
+
+Функція parseNumber призначена для перевірки, чи вхідний параметр є рядком, який можна перетворити в число. Вона спробує перетворити рядок на ціле число і поверне це число, якщо перетворення успішне і результат не є NaN (не число). Якщо перетворення не вдається, повертається undefined.
+
+
+
+Функція parseFilterParams використовує ці дві функції для обробки різних параметрів, які можуть включати стать, вікові межі та середні оцінки (як максимальні, так і мінімальні значення). Вона приймає об'єкт query, з якого витягує ці параметри, обробляє їх через відповідні функції та збирає результати в один об'єкт, який включає оброблені та валідовані параметри. Це дозволяє забезпечити більш точний і цілеспрямований пошук в базі даних за заданими фільтрами.
+
+
+
+Модифікуємо код контролера:
+
+
+
+// src/controllers/students.js
+
+import { parseFilterParams } from '../utils/parseFilterParams.js';
+
+/* Решта коду файла */
+
+export const getStudentsController = async (req, res) => {
+  const { page, perPage } = parsePaginationParams(req.query);
+  const { sortBy, sortOrder } = parseSortParams(req.query);
+  const filter = parseFilterParams(req.query);
+
+  const students = await getAllStudents({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    filter,
+  });
+
+  res.json({
+    status: 200,
+    message: 'Successfully found students!',
+    data: students,
+  });
+};
+
+
+
+Модифікуємо код сервіса:
+
+// src/services/students.js
+
+/* Решта коду файла */
+
+export const getAllStudents = async ({
+  page = 1,
+  perPage = 10,
+  sortOrder = SORT_ORDER.ASC,
+  sortBy = '_id',
+  filter = {},
+}) => {
+  const limit = perPage;
+  const skip = (page - 1) * perPage;
+
+  const studentsQuery = StudentsCollection.find();
+
+  if (filter.gender) {
+    studentsQuery.where('gender').equals(filter.gender);
+  }
+  if (filter.maxAge) {
+    studentsQuery.where('age').lte(filter.maxAge);
+  }
+  if (filter.minAge) {
+    studentsQuery.where('age').gte(filter.minAge);
+  }
+  if (filter.maxAvgMark) {
+    studentsQuery.where('avgMark').lte(filter.maxAvgMark);
+  }
+  if (filter.minAvgMark) {
+    studentsQuery.where('avgMark').gte(filter.minAvgMark);
+  }
+
+  const studentsCount = await StudentsCollection.find()
+    .merge(studentsQuery)
+    .countDocuments();
+
+  const students = await studentsQuery
+    .skip(skip)
+    .limit(limit)
+    .sort({ [sortBy]: sortOrder })
+    .exec();
+
+  const paginationData = calculatePaginationData(studentsCount, perPage, page);
+
+  return {
+    data: students,
+    ...paginationData,
+  };
+};
+
+
+
+Частина коду, яка відповідає за фільтрацію в функції getAllStudents, дозволяє здійснювати вибірку студентів за певними критеріями, що передаються через об'єкт filter. Ця фільтрація реалізована через методи where, equals, lte (less than or equal to), та gte (greater than or equal to), які є частиною запитів до бази даних MongoDB через Mongoose.
+
+
+
+Ось основні етапи фільтрації:
+
+Фільтрація за статтю: Якщо в об'єкті filter передано параметр gender, запит до бази даних обмежується студентами, стать яких відповідає зазначеній.
+Фільтрація за віком: Якщо вказано maxAge, вибірка обмежується студентами, вік яких не перевищує це значення. Аналогічно, minAge встановлює мінімальний віковий поріг.
+Фільтрація за середньою оцінкою: Подібно до віку, maxAvgMark та minAvgMark використовуються для встановлення верхньої та нижньої межі середньої оцінки студентів, яких слід включити в результати.
+
+
+Завдяки цій фільтрації можна здійснювати більш точний і цілеспрямований пошук студентів, який дозволяє ефективно керувати великими обсягами даних та забезпечувати користувачам саме ті результати, які відповідають їхнім запитам.
+
+
+
+Тут стає в пригоді окремий квері білдер для запитів. Логіка по фільтрації таким чином одночасно застосовується як до основного запиту studentsQuery, так і до запиту для обрахунку кількості studentsCount.
+
+Також ми можемо трохи покращити швидкодію нашого додатка за допомогою Promise.all():
+
+
+
+// src/services/students.js
+
+/* Решта коду файла */
+
+/* Замість цього коду */
+
+const studentsCount = await StudentsCollection.find()
+  .merge(studentsQuery)
+  .countDocuments();
+
+const students = await studentsQuery
+  .skip(skip)
+  .limit(limit)
+  .sort({ [sortBy]: sortOrder })
+  .exec();
+
+/* Ми можемо написати такий код */
+
+const [studentsCount, students] = await Promise.all([
+    StudentsCollection.find().merge(studentsQuery).countDocuments(),
+    studentsQuery
+      .skip(skip)
+      .limit(limit)
+      .sort({ [sortBy]: sortOrder })
+      .exec(),
+  ]);
+
+
+
+Цей рефакторинг коду використовує підхід паралельної обробки запитів до бази даних за допомогою Promise.all, що дозволяє ефективніше використовувати ресурси і скоротити час відповіді сервера.
+
+
+
+У початковій версії коду виконання двох асинхронних операцій відбувається послідовно: спочатку визначається кількість студентів (studentsCount), які відповідають заданим критеріям фільтрації, а потім витягуються самі студенти (students) з врахуванням пагінації та сортування. Кожен запит чекає завершення попереднього перед тим, як розпочати виконання, що може призвести до зайвих затримок, особливо при великій кількості даних.
+
+
+
+У рефакторингованій версії коду, замість послідовного виконання, обидві операції запускаються одночасно. Promise.all приймає масив промісів і повертає новий проміс, який виконується, коли всі проміси в масиві успішно виконані. Результатом є масив результатів кожного з промісів у тому порядку, в якому вони були передані.
+
+
+
+Цей підхід дозволяє зменшити загальний час очікування відповіді, оскільки час виконання відповіді буде дорівнює часу виконання найдовшого запиту в масиві, а не сумі часів кожного запиту. Такий підхід є оптимальним, коли операції незалежні одна від одної та можуть виконуватися паралельно без порушення логіки додатку.
+
+
+
+Давайте тепер подивимось на пагінацію, фільтра та сортування разом:
+
+
+
+
+
+parseFilterParams.js
+javascript
+Копіювати код
+
+const parseContactType = (contactType) => {
+  const isString = typeof contactType === 'string';
+  if (!isString) return;
+  const isContactType = (contactType) => ['work', 'home', 'personal'].includes(contactType);
+  
+  if (isContactType(contactType)) return contactType;
+};
+
+export const parseFilterParams = (query) => {
+  const { contactType } = query;
+  const parsedContactType = parseContactType(contactType);
+
+  return {
+    contactType: parsedContactType,
+  };
+};
