@@ -2,10 +2,14 @@
 import express from 'express';
 import pino from 'pino-http';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+
 import { env } from './utils/env.js';
-import contactsRouter from './routers/contacts.js'; // Імпортуємо роутер
+// import contactsRouter from './routers/contacts.js'; // Імпортуємо роутер
+import router from './routers/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
+
 
 
 const PORT = Number(env('PORT', '3000'));
@@ -16,6 +20,8 @@ const app = express();
   app.use(express.json());
 
   app.use(cors());
+  
+  app.use(cookieParser());
 
   app.use(
     pino({
@@ -25,13 +31,17 @@ const app = express();
     }),
   );
 
+
+
+
   app.get('/', (req, res) => {
     res.json({
       message: 'Hello world!',
     });
   });
 
-  app.use(contactsRouter); // Додаємо роутер до app як middleware
+  // app.use(contactsRouter); // Додаємо роутер до app як middleware
+  app.use(router);
 
   app.use('*', notFoundHandler);
 
