@@ -4,36 +4,35 @@ import bcrypt from 'bcrypt';
 import { User } from "../db/models/user.js";
 import createHttpError from 'http-errors';
 import { Session } from '../db/models/session.js';
-import { FIFTEEN_MINUTES, ONE_DAY } from '../constants/index.js';
+import { FIFTEEN_MINUTES, ONE_DAY, THIRTY_DAY } from '../constants/index.js';
 
-export const registerUser = async (payload) => {
 
-  const user = await User.findOne({ email: payload.email });
+export const registerUser = async (userData) => {
+  const user = await User.findOne({ email: userData.email });
   if (user) throw createHttpError(409, 'Email in use');
 
-  const encryptedPassword = await bcrypt.hash(payload.password, 10);
+  const encryptedPassword = await bcrypt.hash(userData.password, 10);
 
   return await User.create({
-    ...payload,
+    ...userData,
     password: encryptedPassword,
   });
 };
 
-
-export const loginUser = async (payload) => {
-  const user = await User.findOne({ email: payload.email });
+export const loginUser = async (userData) => {
+  const user = await User.findOne({ email: userData.email });
   if (!user) {
-    throw createHttpError(404, 'User not found');
+    throw createHttpError(401, 'Unauthorized');
   }
-  const isEqual = await bcrypt.compare(payload.password, user.password); // Порівнюємо хеші паролів
+  const isEqual = await bcrypt.compare(userData.password, user.password); // Порівнюємо хеші паролів
 
   if (!isEqual) {
     throw createHttpError(401, 'Unauthorized');
   }
 
-  // далі ми доповнемо цей контролер
+  // далі ми видаляемо попередню сесію
   await Session.deleteOne({ userId: user._id });
-
+  //створюємо нову сесію
   const accessToken = randomBytes(30).toString('base64');
   const refreshToken = randomBytes(30).toString('base64');
 
@@ -42,7 +41,7 @@ export const loginUser = async (payload) => {
     accessToken,
     refreshToken,
     accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
-    refreshTokenValidUntil: new Date(Date.now() + ONE_DAY),
+    refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAY),
   });
 };
 
@@ -61,7 +60,7 @@ const createSession = () => {
     accessToken,
     refreshToken,
     accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
-    refreshTokenValidUntil: new Date(Date.now() + ONE_DAY),
+    refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAY),
   };
 };
 

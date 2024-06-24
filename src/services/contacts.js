@@ -1,5 +1,4 @@
 
-// import { Promise } from "mongoose";
 import { SORT_ORDER } from "../constants/index.js";
 import { ContactCollection } from "../db/models/contact.js";
 import { calculatePaginationData } from "../utils/calculatePaginationData.js";

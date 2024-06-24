@@ -10,9 +10,14 @@ import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { validateBody } from '../middlewares/validateBody.js';
 import { createContactSchema, updateContactSchema } from '../validation/contacts.js';
 import { isValidId } from '../middlewares/isValidId.js';
+import { authenticate } from '../middlewares/authenticate.js';
 
 
-  const router = Router();
+const router = Router();
+
+  router.use(authenticate);
+
+  // router.use('/:contactId', isValidId('contactId'))  // щоб не вставляти до кожного роутера
 
   router.get('/', ctrlWrapper(getContactsController));
 
@@ -29,7 +34,8 @@ import { isValidId } from '../middlewares/isValidId.js';
 );
 
   router.patch(
-  '/:contactId',
+    '/:contactId',
+  isValidId,
   validateBody(updateContactSchema),
   ctrlWrapper(patchContactController),
   );

@@ -19,7 +19,22 @@ accessToken - string, required
 refreshToken - string, required
 accessTokenValidUntil - Date, required
 refreshTokenValidUntil - Date, required
+------------
+const sessionSchema = new Schema(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: 'users', required: true },
+    accessToken: { type: String, required: true },
+    refreshToken: { type: String, required: true },
+    accessTokenValidUntil: { type: Date, required: true },
+    refreshTokenValidUntil: { type: Date, required: true },
+  },
 
+  {
+    timestamps: true,
+    versionKey: false,
+  },
+);
+-------------
 
 Крок 3
 
@@ -77,11 +92,97 @@ data — об'єкт з властивістю accessToken, що містить 
 
 
 Обробка цього роута має включати:
-
+------------
 Реєстрацію роута в файлі src/routers/auth.js
+
+router.post('/refresh', ctrlWrapper(refreshUserSessionController));
+
+------------
 Опис контролера для цього роута в файлі src/controllers/auth.js
+
+
+
+const setupSession = (res, session) => {
+  res.cookie('refreshToken', session.refreshToken, {
+    httpOnly: true,
+    expires: new Date(Date.now() + ONE_DAY),
+  });
+  res.cookie('sessionId', session._id, {
+    httpOnly: true,
+    expires: new Date(Date.now() + ONE_DAY),
+  });
+};
+
+export const refreshUserSessionController = async (req, res) => {
+  const session = await refreshUsersSession({
+    sessionId: req.cookies.sessionId,
+    refreshToken: req.cookies.refreshToken,
+  });
+
+  setupSession(res, session);
+
+  res.status(200).json({
+    status: 200,
+    message: 'Successfully refreshed a session!',
+    data: {
+      accessToken: session.accessToken,
+    },
+  });
+};
+
+------------
+
 Створення сервісу в файлі src/services/auth.js
+
+const createSession = () => {
+  const accessToken = randomBytes(30).toString('base64');
+  const refreshToken = randomBytes(30).toString('base64');
+
+  return {
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+    refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAY), //===========
+  };
+};
+
+
+
+
+export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
+  const session = await Session.findOne({
+    _id: sessionId,
+    refreshToken,
+  });
+
+  if (!session) {
+    throw createHttpError(401, 'Session not found');
+  }
+
+  const isSessionTokenExpired =
+    new Date() > new Date(session.refreshTokenValidUntil);
+
+  if (isSessionTokenExpired) {
+    throw createHttpError(401, 'Session token expired');
+  }
+
+  const newSession = createSession();
+
+  await Session.deleteOne({ _id: sessionId, refreshToken });
+
+  return await Session.create({
+    userId: session.userId,
+    ...newSession,
+  });
+};
+
+
 Попередня сесія, за її наявності, має бути видалена, а нова створена за тим самим принципом, що і в POST /auth/login.
+------------
+
+
+
+
 Відповідь сервера, в разі успішного створення нового контакту, має бути зі статусом 200 і містити об’єкт з наступними властивостями:
 status — статус відповіді
 message — повідомлення про результат виконання операції "Successfully refreshed a session!"
@@ -92,7 +193,7 @@ data — об'єкт з властивістю accessToken, що містить 
 
 
 
-Створіть роут POST /auth/logoutдля видалення сесії на основі id сесії та токена, який записаний в cookies.
+Створіть роут POST /auth/logout для видалення сесії на основі id сесії та токена, який записаний в cookies.
 
 Обробка цього роута має включати:
 
@@ -560,7 +661,7 @@ export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
   if (isSessionTokenExpired) {
     throw createHttpError(401, 'Session token expired');
   }
-  
+
   const newSession = createSession();
 
   await SessionsCollection.deleteOne({ _id: sessionId, refreshToken });
@@ -686,6 +787,140 @@ router.post('/refresh', ctrlWrapper(refreshUserSessionController));
 
 
 І давайте пройдемося по всьому функціоналу:
+
+================================
+
+Middleware для аутентифікації
+
+
+Після того, як ми розробили основний функціонал, що забзепечує нам роботу із сесіями, нам залишилося лише написати логіку, що буде контролювати доступ до наших ресурсів. Тут ми вже зможемо побачити відмінність авторизації та аутентифікаціЇ.
+
+
+
+Давайте спочатку напишемо middleware для аутентифікації authenticate:
+
+// src/middlewares/authenticate.js
+
+import createHttpError from 'http-errors';
+
+import { SessionsCollection } from '../db/models/session.js';
+import { UsersCollection } from '../db/models/user.js';
+
+export const authenticate = async (req, res, next) => {
+  const authHeader = req.get('Authorization');
+
+  if (!authHeader) {
+    next(createHttpError(401, 'Please provide Authorization header'));
+    return;
+  }
+
+  const bearer = authHeader.split(' ')[0];
+  const token = authHeader.split(' ')[1];
+
+  if (bearer !== 'Bearer' || !token) {
+    next(createHttpError(401, 'Auth header should be of type Bearer'));
+    return;
+  }
+
+  const session = await SessionsCollection.findOne({ accessToken: token });
+
+  if (!session) {
+    next(createHttpError(401, 'Session not found'));
+    return;
+  }
+
+  const isAccessTokenExpired =
+    new Date() > new Date(session.accessTokenValidUntil);
+
+  if (isAccessTokenExpired) {
+    next(createHttpError(401, 'Access token expired'));
+  }
+
+  const user = await UsersCollection.findById(session.userId);
+
+  if (!user) {
+    next(createHttpError(401));
+    return;
+  }
+
+  req.user = user;
+
+  next();
+};
+
+
+
+Middleware authenticate виконує процес аутентифікації користувача, перевіряючи наявність та дійсність токена доступу в заголовку запиту. Ось детальне пояснення її роботи:
+
+
+
+Перевірка заголовка авторизації:
+
+Функція приймає об'єкти запиту (req), відповіді (res) і наступної функції (next).
+Вона отримує заголовок авторизації за допомогою req.get('Authorization').
+Якщо заголовок авторизації не надано, функція викликає помилку з кодом 401 (Будь ласка, надайте заголовок авторизації) і передає її до наступної функції за допомогою next.
+
+
+Перевірка типу заголовка та наявності токена:
+
+Функція розділяє заголовок авторизації на дві частини: тип (повинен бути "Bearer") і сам токен.
+Якщо тип заголовка не "Bearer" або токен відсутній, функція викликає помилку з кодом 401 (Заголовок авторизації повинен бути типу Bearer) і передає її до наступної функції.
+
+
+Перевірка наявності сесії:
+
+Функція шукає сесію в колекції SessionsCollection за наданим токеном доступу.
+Якщо сесію не знайдено, функція викликає помилку з кодом 401 (Сесію не знайдено) і передає її до наступної функції.
+
+
+Перевірка терміну дії токена доступу:
+
+Функція перевіряє, чи не минув термін дії токена доступу, порівнюючи поточну дату з датою закінчення дії токена.
+Якщо токен прострочений, функція викликає помилку з кодом 401 (Токен доступу прострочений) і передає її до наступної функції.
+
+
+Пошук користувача:
+
+Функція шукає користувача в колекції UsersCollection за ідентифікатором користувача, який зберігається в сесії.
+Якщо користувача не знайдено, функція викликає помилку з кодом 401 і передає її до наступної функції.
+
+
+Додавання користувача до запиту:
+
+Якщо всі перевірки успішні, функція додає об'єкт користувача до запиту (req.user = user).
+Викликається наступна функція за допомогою next, що дозволяє продовжити обробку запиту.
+
+
+Таким чином, функція authenticate обробляє запит на аутентифікацію, перевіряє наявність і дійсність заголовка авторизації та токена доступу, шукає відповідну сесію та користувача, а також додає об'єкт користувача до запиту, якщо всі перевірки успішні.
+
+
+
+Тепер ми можемо скористатись нашим middleware authenticate в роутері для запитів до колекції студентів:
+
+// src/routers/students.js
+
+import { authenticate } from '../middlewares/authenticate.js';
+
+/* Інший код файлу */
+
+router.use(authenticate);
+
+router.get('/', ctrlWrapper(getStudentsController));
+
+
+
+💡 Зверніть увагу! Коли ми приміняємо middleware таким чином (router.use(authenticate);), як вказано вище, вона будет примінятися до всіх роутів цього роутера. Тобто, вона відпрацює на всіх роутах, що починаються зі /students
+
+
+Наостанок давайте перевіримо наш функціонал в постмані:
+
+
+
+
+
+
+
+Також постман володіє можливостями, які нам можуть полегшити життя при роботі із авторизацією:
 
 
 
