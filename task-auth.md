@@ -498,6 +498,18 @@ router.post(
 Cесії. Access+refresh tokens
 
 
+ //створюємо нову сесію
+  const accessToken = randomBytes(30).toString('base64');
+  const refreshToken = randomBytes(30).toString('base64');
+
+  return await Session.create({
+    userId: user._id,
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+    refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAY),
+  });
+-==-==
 Основні аспекти сесій включають:
 
 Ідентифікатор сесії (Session ID): Кожна сесія має унікальний ідентифікатор, який використовується для пов'язування інформації між клієнтом та сервером. Ідентифікатор сесії зазвичай передається через куки або включається у URL.
@@ -704,7 +716,90 @@ createSession повертає об'єкт з новими токенами і �
 
 
 Таким чином, функція refreshUsersSession обробляє запит на оновлення сесії користувача, перевіряє наявність і термін дії існуючої сесії, генерує нову сесію та зберігає її в базі даних.
+-------------
+<!-- улучшиная -->
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
 
+import { User } from "../db/models/user.js";
+import createHttpError from 'http-errors';
+import { Session } from '../db/models/session.js';
+import { FIFTEEN_MINUTES, ONE_DAY, THIRTY_DAY } from '../constants/index.js';
+
+const createSession = (userId) => {
+  const accessToken = randomBytes(30).toString('base64');
+  const refreshToken = randomBytes(30).toString('base64');
+
+  return {
+    userId,
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+    refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAY),
+  };
+};
+
+const clearPreviousSessions = async (userId) => {
+  await Session.deleteMany({ userId });
+};
+
+export const registerUser = async (userData) => {
+  const user = await User.findOne({ email: userData.email });
+  if (user) throw createHttpError(409, 'Email in use');
+
+  const encryptedPassword = await bcrypt.hash(userData.password, 10);
+
+  return await User.create({
+    ...userData,
+    password: encryptedPassword,
+  });
+};
+
+export const loginUser = async (userData) => {
+  const user = await User.findOne({ email: userData.email });
+  if (!user) {
+    throw createHttpError(401, 'Unauthorized');
+  }
+  const isEqual = await bcrypt.compare(userData.password, user.password);
+
+  if (!isEqual) {
+    throw createHttpError(401, 'Unauthorized');
+  }
+
+  await clearPreviousSessions(user._id);
+
+  const sessionData = createSession(user._id);
+  const session = await Session.create(sessionData);
+
+  return session;
+};
+
+export const logoutUser = async (sessionId) => {
+  await Session.deleteOne({ _id: sessionId });
+};
+
+export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
+  const session = await Session.findOne({ _id: sessionId, refreshToken });
+
+  if (!session) {
+    throw createHttpError(401, 'Session not found');
+  }
+
+  const isSessionTokenExpired =
+    new Date() > new Date(session.refreshTokenValidUntil);
+
+  if (isSessionTokenExpired) {
+    throw createHttpError(401, 'Session token expired');
+  }
+
+  await clearPreviousSessions(session.userId);
+
+  const newSessionData = createSession(session.userId);
+  const newSession = await Session.create(newSessionData);
+
+  return newSession;
+};
+---------------------------
 
 
 Наступним кроком створимо контролер:

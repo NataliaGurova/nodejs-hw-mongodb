@@ -9,12 +9,13 @@ export const getAllContacts = async ({
   sortOrder = SORT_ORDER.ASC,
   sortBy = '_id',
   filter = {},
+  userId,
 }) => {
   // пагінація
   const limit = perPage;
   const skip = (page - 1) * perPage;
 
-  const contactsQuery = ContactCollection.find();
+  const contactsQuery = ContactCollection.find({userId});
 
   // фільтри
   if (filter.contactType) {
@@ -56,15 +57,24 @@ const [contactsCount, contacts] = await Promise.all([
 
 }
 
-export const getContactById = (contactId) => ContactCollection.findById(contactId);
+export const getContactById = (contactId, userId) => ContactCollection.findById({
+    _id: contactId,
+    userId,
+  });
 
-export const createContact = (payload) => ContactCollection.create(payload);
+export const createContact = (payload, userId) => ContactCollection.create({
+    ...payload,
+    userId,
+  });
 
-export const deleteContact = (contactId) => ContactCollection.findByIdAndDelete(contactId);
+export const deleteContact = (contactId, userId) => ContactCollection.findByIdAndDelete({
+    _id: contactId,
+    userId,
+  });
 
-export const updateContact = async (contactId, payload, options = {}) => {
+export const updateContact = async (contactId, payload, userId, options = {}) => {
   const rawResult = await ContactCollection.findOneAndUpdate(
-    { _id: contactId },
+    { _id: contactId, userId },
     payload,
     {
       new: true,
