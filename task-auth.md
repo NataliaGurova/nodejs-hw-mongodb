@@ -1019,3 +1019,7 @@ router.get('/', ctrlWrapper(getStudentsController));
 
 
 
+SCRIPT Postman
+
+const jsonData = JSON.parse(responseBody)
+pm.environment.set('access_token', jsonData.data.accessToken)

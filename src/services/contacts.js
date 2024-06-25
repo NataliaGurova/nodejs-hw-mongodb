@@ -57,7 +57,7 @@ const [contactsCount, contacts] = await Promise.all([
 
 }
 
-export const getContactById = (contactId, userId) => ContactCollection.findById({
+export const getContactById = (contactId, userId) => ContactCollection.findOne({
     _id: contactId,
     userId,
   });
@@ -67,7 +67,7 @@ export const createContact = (payload, userId) => ContactCollection.create({
     userId,
   });
 
-export const deleteContact = (contactId, userId) => ContactCollection.findByIdAndDelete({
+export const deleteContact = (contactId, userId) => ContactCollection.findOneAndDelete({
     _id: contactId,
     userId,
   });
