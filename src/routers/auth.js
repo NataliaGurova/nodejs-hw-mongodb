@@ -7,8 +7,6 @@ import { ctrlWrapper } from "../utils/ctrlWrapper.js";
 
 const router = Router();
 
-// router.use(authenticate);
-
 router.post(
   '/register',
   validateBody(registerUserSchema),

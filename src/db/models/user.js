@@ -21,7 +21,7 @@ const userSchema = new Schema(
     versionKey: false,
   },
 );
-
+//для захисту пароля користувача
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
