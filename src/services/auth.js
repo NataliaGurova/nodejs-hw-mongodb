@@ -59,7 +59,6 @@ export const logoutUser = async (sessionId) => {
 };
 
 
-
 const createSession = () => {
   const accessToken = randomBytes(30).toString('base64');
   const refreshToken = randomBytes(30).toString('base64');
@@ -71,6 +70,7 @@ const createSession = () => {
     refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAY),
   };
 };
+
 
 export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
   const session = await Session.findOne({
@@ -100,11 +100,6 @@ export const refreshUsersSession = async ({ sessionId, refreshToken }) => {
 };
 
 //========== 6  ========
-
-
-// import { SMTP } from '../constants/index.js';
-// import { env } from '../utils/env.js';
-// import { sendEmail } from '../utils/sendMail.js';
 
 export const requestResetToken = async (email) => {
   const user = await User.findOne({ email });

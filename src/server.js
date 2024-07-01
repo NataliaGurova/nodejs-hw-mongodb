@@ -9,6 +9,7 @@ import { env } from './utils/env.js';
 import router from './routers/index.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
+import { UPLOAD_DIR } from './constants/index.js';
 
 
 
@@ -20,7 +21,7 @@ const app = express();
   app.use(express.json());
 
   app.use(cors());
-  
+
   app.use(cookieParser());
 
   app.use(
@@ -32,16 +33,18 @@ const app = express();
   );
 
 
-
-
   app.get('/', (req, res) => {
     res.json({
       message: 'Hello world!',
     });
   });
 
+  //Photo
+  app.use('/uploads', express.static(UPLOAD_DIR));
+
   // app.use(contactsRouter); // Додаємо роутер до app як middleware
   app.use(router);
+
 
   app.use('*', notFoundHandler);
 

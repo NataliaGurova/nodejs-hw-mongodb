@@ -2,6 +2,8 @@
 import { SORT_ORDER } from "../constants/index.js";
 import { ContactCollection } from "../db/models/contact.js";
 import { calculatePaginationData } from "../utils/calculatePaginationData.js";
+import { createDirIfNotExists } from "../utils/createDirIfNotExists.js";
+import { saveFileToUploadDir } from "../utils/saveFileToUploadDir.js";
 
 export const getAllContacts = async ({
   page = 1,
@@ -15,7 +17,7 @@ export const getAllContacts = async ({
   const limit = perPage;
   const skip = (page - 1) * perPage;
 
-  const contactsQuery = ContactCollection.find({userId});
+  const contactsQuery = ContactCollection.find({ userId });
 
   // фільтри
   if (filter.contactType) {
@@ -36,17 +38,17 @@ export const getAllContacts = async ({
   //   .sort({ [sortBy]: sortOrder })
   //   .exec();
 
-/* Ми можемо написати такий код */
+  /* Ми можемо написати такий код */
 
-const [contactsCount, contacts] = await Promise.all([
-  ContactCollection.find().merge(contactsQuery).countDocuments(),
-  contactsQuery
-  .skip(skip)
-  .limit(limit)
-  .sort({ [sortBy]: sortOrder })
-  .exec(),
-]);
-/* -------------------------- */
+  const [contactsCount, contacts] = await Promise.all([
+    ContactCollection.find().merge(contactsQuery).countDocuments(),
+    contactsQuery
+      .skip(skip)
+      .limit(limit)
+      .sort({ [sortBy]: sortOrder })
+      .exec(),
+  ]);
+  /* -------------------------- */
 
   const paginationData = calculatePaginationData(contactsCount, perPage, page);
 
@@ -54,23 +56,27 @@ const [contactsCount, contacts] = await Promise.all([
     data: contacts,
     ...paginationData,
   };
+};
 
-}
 
 export const getContactById = (contactId, userId) => ContactCollection.findOne({
     _id: contactId,
     userId,
   });
 
+
 export const createContact = (payload, userId) => ContactCollection.create({
     ...payload,
     userId,
-  });
+});
+
 
 export const deleteContact = (contactId, userId) => ContactCollection.findOneAndDelete({
     _id: contactId,
     userId,
   });
+
+
 
 export const updateContact = async (contactId, payload, userId, options = {}) => {
   const rawResult = await ContactCollection.findOneAndUpdate(

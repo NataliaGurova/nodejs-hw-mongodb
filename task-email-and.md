@@ -208,3 +208,295 @@ export const requestResetToken = async (email) => {
     html,
   });
 };
+
+
+
+==========================
+IMAGE
+
+// src/index.js
+
+import { initMongoDB } from './db/initMongoDB.js';
+import { startServer } from './server.js';
+import { createDirIfNotExists } from './utils/createDirIfNotExists.js';
+import { TEMP_UPLOAD_DIR, UPLOAD_DIR } from './constants/index.js';
+
+const bootstrap = async () => {
+  await initMongoDB();
+  await createDirIfNotExists(TEMP_UPLOAD_DIR);
+  await createDirIfNotExists(UPLOAD_DIR);
+  startServer();
+};
+
+void bootstrap();
+
+-------------------------
+// src/routers/students.js
+
+import { upload } from '../middlewares/multer.js';
+
+/* Інший код файлу */
+
+router.post(
+  '/',
+  checkRoles(ROLES.TEACHER),
+  validateBody(createStudentSchema),
+  upload.single('photo'), // додаємо цю middleware
+  ctrlWrapper(createStudentController),
+);
+
+router.put(
+  '/:studentId',
+  checkRoles(ROLES.TEACHER),
+  validateBody(createStudentSchema),
+  upload.single('photo'), // додаємо цю middleware
+  ctrlWrapper(upsertStudentController),
+);
+
+router.patch(
+  '/:studentId',
+  checkRoles(ROLES.TEACHER, ROLES.PARENT),
+  validateBody(updateStudentSchema),
+  upload.single('photo'), // додаємо цю middleware
+  ctrlWrapper(patchStudentController),
+);
+
+----------------------
+
+// src/controllers/students.js
+
+export const patchStudentController = async (req, res, next) => {
+  const { studentId } = req.params;
+  const photo = req.file;
+
+	/* в photo лежить обʼєкт файлу
+		{
+		  fieldname: 'photo',
+		  originalname: 'download.jpeg',
+		  encoding: '7bit',
+		  mimetype: 'image/jpeg',
+		  destination: '/Users/borysmeshkov/Projects/goit-study/students-app/temp',
+		  filename: '1710709919677_download.jpeg',
+		  path: '/Users/borysmeshkov/Projects/goit-study/students-app/temp/1710709919677_download.jpeg',
+		  size: 7
+	  }
+	*/
+
+	/* Інший код контролеру */
+};
+
+
+---------------------
+// src/utils/saveFileToUploadDir.js
+
+import path from 'node:path';
+import fs from 'node:fs/promises';
+import { TEMP_UPLOAD_DIR, UPLOAD_DIR } from '../constants/index.js';
+import { env } from './env.js';
+
+export const saveFileToUploadDir = async (file) => {
+  await fs.rename(
+    path.join(TEMP_UPLOAD_DIR, file.filename),
+    path.join(UPLOAD_DIR, file.filename),
+  );
+
+  return `${env('APP_DOMAIN')}/uploads/${file.filename}`;
+};
+
+--------------
+// src/db/models/student.js
+
+import { model, Schema } from 'mongoose';
+
+const studentsSchema = new Schema(
+  {
+    /* Інший код файлу */
+
+    photo: { type: String },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
+);
+
+export const StudentsCollection = model('students', studentsSchema);
+
+-------------------
+Використаємо тепер функцію saveFileToUploadDir в контроллері:
+
+// src/controllers/students.js
+
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+
+/* Інший код файлу */
+
+export const patchStudentController = async (req, res, next) => {
+  const { studentId } = req.params;
+  const photo = req.file;
+
+  let photoUrl;
+
+  if (photo) {
+    photoUrl = await saveFileToUploadDir(photo);
+  }
+
+  const result = await updateStudent(studentId, {
+    ...req.body,
+    photo: photoUrl,
+  });
+
+  if (!result) {
+    next(createHttpError(404, 'Student not found'));
+    return;
+  }
+
+  res.json({
+    status: 200,
+    message: `Successfully patched a student!`,
+    data: result.student,
+  });
+};
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Для того щоб додати підтримку Content-Type: multipart/form-data для маршрутів POST і PATCH, вам потрібно скористатися бібліотекою multer для обробки завантажених файлів. Ось як це можна зробити:
+
+Крок 1: Встановлення Multer
+Встановіть multer за допомогою npm або yarn:
+
+bash
+Копіювати код
+npm install multer
+або
+
+bash
+Копіювати код
+yarn add multer
+Крок 2: Налаштування Multer
+Створіть файл middlewares/multer.js, в якому буде налаштовано multer для обробки завантажених файлів:
+
+middlewares/multer.js
+javascript
+Копіювати код
+import multer from 'multer';
+import path from 'node:path';
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(process.cwd(), 'temp')); // Тимчасова директорія для завантаження
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+export const upload = multer({ storage });
+Крок 3: Використання Multer у маршрутах
+Додайте multer як middleware до ваших маршрутів POST і PATCH:
+
+routes/contacts.js
+javascript
+Копіювати код
+import express from 'express';
+import { createContactController, patchContactController } from '../controllers/contacts.js';
+import { upload } from '../middlewares/multer.js';
+import { authenticate } from '../middlewares/authenticate.js'; // Приклад middleware для автентифікації
+
+const router = express.Router();
+
+router.post('/contacts', authenticate, upload.single('avatar'), createContactController);
+router.patch('/contacts/:contactId', authenticate, upload.single('avatar'), patchContactController);
+
+export default router;
+Крок 4: Оновлення контролерів
+Переконайтеся, що ваші контролери правильно обробляють завантажені файли.
+
+controllers/contacts.js
+javascript
+Копіювати код
+import { createContact, updateContact } from '../services/contacts.js';
+import createHttpError from 'http-errors';
+
+export const createContactController = async (req, res, next) => {
+  const { body, file } = req;
+
+  try {
+    const contact = await createContact({ ...body, avatar: file }, req.user._id);
+
+    res.status(201).json({
+      status: 201,
+      message: "Successfully created a contact!",
+      data: contact,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const patchContactController = async (req, res, next) => {
+  const { body, file } = req;
+  const { contactId } = req.params;
+
+  try {
+    const contact = await updateContact(contactId, { ...body, avatar: file }, req.user._id);
+
+    if (!contact) {
+      throw createHttpError(404, 'Contact not found');
+    }
+
+    res.json({
+      status: 200,
+      message: `Successfully patched a contact!`,
+      data: contact,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+services/contacts.js
+javascript
+Копіювати код
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+import { ContactCollection } from '../db/models/contact.js';
+
+export const createContact = async ({ avatar, ...payload }, userId) => {
+  const url = await saveFileToUploadDir(avatar);
+
+  const contact = await ContactCollection.create({
+    ...payload,
+    userId,
+    avatarUrl: url,
+  });
+  return contact;
+};
+
+export const updateContact = async (contactId, { avatar, ...payload }, userId) => {
+  let url;
+
+  if (avatar) {
+    url = await saveFileToUploadDir(avatar);
+    payload.avatarUrl = url;
+  }
+
+  const contact = await ContactCollection.findOneAndUpdate(
+    { _id: contactId, userId },
+    payload,
+    { new: true }
+  );
+
+  return contact;
+};
+Підсумок
+Ці кроки дозволять вам підтримувати Content-Type: multipart/form-data для завантаження файлів у ваших POST і PATCH маршрутах для контактів. Це забезпечить можливість обробки завантажених файлів, збереження їх у відповідній директорії та оновлення відповідних полів у базі даних.
+
+
+
+
+
+
+
+
+
