@@ -30,16 +30,16 @@ const router = Router();
 
   router.post(
   '/',
-  validateBody(createContactSchema),
   upload.single('avatar'), // додаємо цю middleware
+  validateBody(createContactSchema),
   ctrlWrapper(createContactController),
 );
 
   router.patch(
     '/:contactId',
   isValidId,
-  validateBody(updateContactSchema),
   upload.single('avatar'), // додаємо цю middleware
+  validateBody(updateContactSchema),
   ctrlWrapper(patchContactController),
   );
 
