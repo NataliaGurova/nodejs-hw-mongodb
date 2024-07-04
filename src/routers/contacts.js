@@ -30,7 +30,7 @@ const router = Router();
 
   router.post(
   '/',
-  upload.single('avatar'), // додаємо цю middleware
+  upload.single('photo'), // додаємо цю middleware
   validateBody(createContactSchema),
   ctrlWrapper(createContactController),
 );
@@ -38,7 +38,7 @@ const router = Router();
   router.patch(
     '/:contactId',
   isValidId,
-  upload.single('avatar'), // додаємо цю middleware
+  upload.single('photo'), // додаємо цю middleware
   validateBody(updateContactSchema),
   ctrlWrapper(patchContactController),
   );
