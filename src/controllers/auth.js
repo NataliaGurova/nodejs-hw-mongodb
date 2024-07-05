@@ -1,5 +1,6 @@
 import { THIRTY_DAY } from "../constants/index.js";
-import { loginUser, logoutUser, refreshUsersSession, registerUser, requestResetToken, resetPassword } from "../services/auth.js";
+import { loginOrSignupWithGoogle, loginUser, logoutUser, refreshUsersSession, registerUser, requestResetToken, resetPassword } from "../services/auth.js";
+import { generateAuthUrl } from "../utils/googleOAuth2.js";
 
 
 
@@ -72,6 +73,7 @@ export const refreshUserSessionController = async (req, res) => {
 };
 
 //=========  6  =========
+
 export const requestResetEmailController = async (req, res) => {
   await requestResetToken(req.body.email);
   res.json({
@@ -90,4 +92,41 @@ export const resetPasswordController = async (req, res) => {
   });
 };
 
+// Контролер для отримання посилання авторизації Google
 
+// const setupSessionCookies = (res, session) => {
+//   res.cookie('sessionId', session._id, {
+//     httpOnly: true,
+//     expire: 7 * 24 * 60 * 60,
+//   });
+//   res.cookie('sessionToken', session.refreshToken, {
+//     httpOnly: true,
+//     expire: 7 * 24 * 60 * 60,
+//   });
+// };
+
+export const getGoogleOAuthUrlController = async (req, res) => {
+  const url = generateAuthUrl();
+  res.json({
+    status: 200,
+    message: 'Successfully get Google OAuth url!',
+    data: {
+      url,
+    },
+  });
+};
+
+
+export const loginWithGoogleController = async (req, res) => {
+  const session = await loginOrSignupWithGoogle(req.body.code);
+  
+  setupCookiesSession(res, session);
+
+  res.json({
+    status: 200,
+    message: 'Successfully logged in via Google OAuth!',
+    data: {
+      accessToken: session.accessToken,
+    },
+  });
+};
