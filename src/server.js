@@ -41,6 +41,7 @@ const app = express();
 
   //Photo
   app.use('/uploads', express.static(UPLOAD_DIR));
+  app.use('/api-docs', swaggerDocs());
 
   // app.use(contactsRouter); // Додаємо роутер до app як middleware
   app.use(router);
