@@ -451,3 +451,239 @@ responses:
               $ref: '../../../components/schemas/student.yaml'
   '401':
     $ref: '../../../components/responses/401.yaml'
+
+
+=================-------------==============
+
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: Contacts-app
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: >
+    This is a documentation of contacts app
+tags:
+  - name: Contacts
+    description: Operations about contacts.
+  - name: Auth
+    description: Auth operations.
+servers:
+  - url: http://localhost:3000
+  - url: # посилання на задеплоєний сайт
+paths:
+  /contacts:
+    get:
+      tags:
+        - Contacts
+      summary: Get list of contacts
+      operationId: getContact
+      description: 'Get list of contacts with this endpoint'
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            example: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            example: 10
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            example: 'name'
+          description: "All contact's fields can be mentioned. Default value - _id"
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: ['asc', 'desc']
+            example: 'asc'
+        - in: query
+          name: contactType
+          schema:
+            type: string
+            enum: ['work', 'home', 'personal']
+            example: 'home'
+        - in: query
+          name: isFavourite
+          schema:
+            type: boolean
+            example: true
+      responses:
+        '200':
+          description: 'Successfully found contacts!'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Successfully found contacts!
+                  data:
+                    type: object
+                    required:
+                      - data
+                      - page
+                      - perPage
+                      - totalItems
+                      - totalPages
+                      - hasNextPage
+                      - hasPreviousPage
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Contact'
+                      page:
+                        type: number
+                        example: 2
+                      perPage:
+                        type: number
+                        example: 4
+                      totalItems:
+                        type: number
+                        example: 4
+                      totalPages:
+                        type: number
+                        example: 4
+                      hasNextPage:
+                        type: boolean
+                        example: false
+                      hasPreviousPage:
+                        type: boolean
+                        example: true
+        '401':
+          $ref: '#/components/responses/401'
+    post:
+      tags:
+        - Contacts
+      summary: Create contact
+      operationId: createContact
+      description: 'Create a contact with payload'
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - phoneNumber
+              properties:
+                name:
+                  description: "Contact's name"
+                  type: string
+                  example: John Doe
+                phoneNumber:
+                  description: "Contact's phone number"
+                  type: string
+                  example: '+386666666666'
+                email:
+                  description: "Contact's email"
+                  type: string
+                  example: johndoe@example.com
+                contactType:
+                  description: 'Contact type'
+                  type: string
+                  enum: ['work', 'home', 'personal']
+                  default: personal
+                  example: home
+                isFavourite:
+                  description: 'Whether contact is favourite'
+                  type: boolean
+                  example: true
+                photo:
+                  description: "Contact's photo"
+                  type: string
+                  format: binary
+                  example: https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg
+      responses:
+        '201':
+          description: Creates a contact
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - message
+                  - data
+                properties:
+                  status:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Successfully created a contact!
+                  data:
+                    type: object
+                    $ref: '#/components/schemas/Contact'
+        '401':
+          $ref: '#/components/responses/401'
+  /contacts/{contactId}:
+    get:
+      $ref: '#/components/schemas/getContactById'
+    patch:
+      $ref: '#/components/schemas/patchContact'
+    delete:
+      $ref: '#/components/schemas/deleteContact'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Contact:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        name:
+          type: string
+          example: 'John Doe'
+        phoneNumber:
+          type: string
+          example: '+386666666666'
+        email:
+          type: string
+          example: 'johndoe@example.com'
+        contactType:
+          type: string
+          example: 'home'
+        isFavourite:
+          type: boolean
+          example: true
+        photo:
+          type: string
+          example: 'https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg'
+  responses:
+    401:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 401
+              message:
+                type: string
+                example: 'Unauthorized'
