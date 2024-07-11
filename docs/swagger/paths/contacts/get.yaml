@@ -1,7 +1,7 @@
 tags:
   - Contacts
 summary: Get list of contacts
-operationId: getAllContacts
+operationId: getContact
 description: 'Get list of contacts with this endpoint'
 security:
   - bearerAuth: []
@@ -39,6 +39,9 @@ parameters:
     schema:
       type: boolean
       example: true
+
+
+
 responses:
   '200':
     description: 'Successfully found contacts!'

@@ -36,6 +36,10 @@ requestBody:
             description: 'Whether contact is favourite'
             type: boolean
             example: true
+          # parentId:
+          #   description: "Contact's parent id"
+          #   type: string
+          #   example: 65e4decdd286b30065d54af9
           photo:
             description: "Contact's photo"
             type: string
@@ -55,7 +59,7 @@ responses:
           properties:
             status:
               type: integer
-              example: 200
+              example: 201
             message:
               type: string
               example: Successfully created a contact!
