@@ -39,9 +39,6 @@ parameters:
     schema:
       type: boolean
       example: true
-
-
-
 responses:
   '200':
     description: 'Successfully found contacts!'
