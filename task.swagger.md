@@ -687,3 +687,171 @@ components:
               message:
                 type: string
                 example: 'Unauthorized'
+
+
+
+
+
+
+=================================================================================================================================
+
+Документація GET
+Давайте для практики створимо в docs/openapi.yaml ще один ендпоінт GET /students:
+
+# /docs/openapi.yaml
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: Students app
+  license:
+    name: Apache 2.0
+    url: <http://www.apache.org/licenses/LICENSE-2.0.html>
+  description: >
+    This is a documentation of students app
+tags:
+  - name: Students
+    description: Operations about students.
+  - name: Auth
+    description: Auth operations.
+servers:
+  - url: <http://localhost:3000>
+  - url: <https://example.com/api/v1>
+paths:
+  /students:
+    get:
+      $ref: ../swagger/paths/students/get.yaml #додаємо ще один шлях
+    post:
+      $ref: ../swagger/paths/students/post.yaml
+  /students/{id}:
+    get:
+      $ref: ../swagger/paths/students/{id}/get.yaml
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+
+
+
+І опишемо його у файлі swagger/paths/students/get.yaml:
+
+#/swagger/paths/students/get.yaml
+
+tags:
+  - Students
+summary: Get list of students
+operationId: getStudents
+description: 'Get list of users with this endpoint'
+security:
+  - bearerAuth: []
+parameters:
+  - in: query
+    name: page
+    schema:
+      type: integer
+    example: 1
+  - in: query
+    name: perPage
+    schema:
+      type: integer
+      example: 10
+  - in: query
+    name: sortBy
+    schema:
+      type: string
+      example: 'age'
+    description: "All student's fields can be mentioned. Default value - _id"
+  - in: query
+    name: sortOrder
+    schema:
+      type: string
+      enum: ['asc', 'desc']
+      example: 'asc'
+  - in: query
+    name: minAvgMark
+    schema:
+      type: number
+      example: 4
+  - in: query
+    name: maxAvgMark
+    schema:
+      type: number
+      example: 10
+  - in: query
+    name: minAge
+    schema:
+      type: number
+      example: 10
+  - in: query
+    name: maxAge
+    schema:
+      type: number
+      example: 16
+  - in: query
+    name: gender
+    schema:
+      type: string
+      enum: ['male', 'female', 'other']
+      example: male
+responses:
+  '200':
+    description: Successfully found students!
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+            - data
+          properties:
+            status:
+              type: integer
+              example: 200
+            message:
+              type: string
+              example: Successfully found students!
+            data:
+              type: object
+              required:
+                - data
+                - page
+                - perPage
+                - totalItems
+                - totalPages
+                - hasNextPage
+                - hasPreviousPage
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '../../components/schemas/student.yaml'
+                page:
+                  type: number
+                  example: 2
+                perPage:
+                  type: number
+                  example: 4
+                totalItems:
+                  type: number
+                  example: 4
+                totalPages:
+                  type: number
+                  example: 4
+                hasNextPage:
+                  type: boolean
+                  example: false
+                hasPreviousPage:
+                  type: boolean
+                  example: true
+  '401':
+    $ref: '../../components/responses/401.yaml'
+
+
+
+
+Тут для нас є два нових моменти:
+
+В полі parameters у нас зʼявилися нові значення - in: query замість in: path . Таким чином ми вказуємо, що це query parameters, тобто ті, що ідуть після символа ?.
+У 200 відповіді в полі data зʼявляється ще одне кладене поле із такою ж назвою з типом array. Для такого типу схеми ми можемо вказати поле items, де вказати, як будуть виглядати елементи цього масива
