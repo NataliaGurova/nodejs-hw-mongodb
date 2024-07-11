@@ -34,7 +34,7 @@
           "Contacts"
         ],
         "summary": "Get list of contacts",
-        "operationId": "getAllContacts",
+        "operationId": "getContact",
         "description": "Get list of contacts with this endpoint",
         "security": [
           {
@@ -255,7 +255,7 @@
                   "properties": {
                     "status": {
                       "type": "integer",
-                      "example": 200
+                      "example": 201
                     },
                     "message": {
                       "type": "string",
@@ -518,8 +518,7 @@
           "contactType",
           "updatedAt",
           "createdAt",
-          "userId",
-          "photo"
+          "userId"
         ],
         "properties": {
           "name": {

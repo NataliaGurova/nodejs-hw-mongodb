@@ -8,7 +8,6 @@ required:
   - updatedAt
   - createdAt
   - userId
-  - photo
 properties:
   name:
     type: string
