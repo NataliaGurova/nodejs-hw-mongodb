@@ -1,14 +1,13 @@
 type: object
 required:
+  - _id
   - name
   - phoneNumber
-  - email
-  - isFavourite
-  - contactType
-  - updatedAt
-  - createdAt
-  - userId
 properties:
+  _id:
+    type: string
+    description: "Contact's id"
+    example: 65e4decdd286b30065d54af9
   name:
     type: string
     description: "Contact's name"
@@ -26,29 +25,17 @@ properties:
     type: boolean
     description: 'Contact favourite'
     example: true
-  createdAt:
-    type: string
-    format: date-time
-    description: 'When was created'
-    example: '2024-06-06T17:48:14.102Z'
-  updatedAt:
-    type: string
-    format: date-time
-    description: 'When was updated'
-    example: '2024-06-06T17:48:14.102Z'
   contactType:
     type: string
     description: "Contact's type"
-    enum:
-      - work
-      - home
-      - personal
+    enum: ['work', 'home', 'personal']
     example: 'home'
   userId:
+    description: "User's id"
     type: string
-    description: 'Contacts user id'
-    example: '667d6460f307fed962c9642e'
+    example: 65e4decdd286b30065d54af9
   photo:
+    description: "Link to contact's photo"
     type: string
-    format: binary
-    description: 'https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg'
+    example: 'https://res.cloudinary.com/uqwgdu/image/upload/image.png'
+

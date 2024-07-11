@@ -1,7 +1,7 @@
 tags:
   - Contacts
 summary: Get list of contacts
-operationId: getContact
+operationId: getContacts
 description: 'Get list of contacts with this endpoint'
 security:
   - bearerAuth: []
@@ -39,9 +39,6 @@ parameters:
     schema:
       type: boolean
       example: true
-
-
-
 responses:
   '200':
     description: 'Successfully found contacts!'
@@ -95,3 +92,5 @@ responses:
                   example: true
   '401':
     $ref: ../../components/responses/401.yaml
+  '404':
+    $ref: '../../components/responses/404.yaml'

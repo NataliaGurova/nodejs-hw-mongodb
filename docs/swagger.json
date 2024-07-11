@@ -34,7 +34,7 @@
           "Contacts"
         ],
         "summary": "Get list of contacts",
-        "operationId": "getContact",
+        "operationId": "getContacts",
         "description": "Get list of contacts with this endpoint",
         "security": [
           {
@@ -173,6 +173,9 @@
           },
           "401": {
             "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
           }
         }
       },
@@ -213,6 +216,11 @@
                     "type": "string",
                     "example": "johndoe@example.com"
                   },
+                  "isFavourite": {
+                    "description": "Whether contact is favourite",
+                    "type": "boolean",
+                    "example": true
+                  },
                   "contactType": {
                     "description": "Contact type",
                     "type": "string",
@@ -224,16 +232,10 @@
                     "default": "personal",
                     "example": "home"
                   },
-                  "isFavourite": {
-                    "description": "Whether contact is favourite",
-                    "type": "boolean",
-                    "example": true
-                  },
                   "photo": {
                     "description": "Contact's photo",
                     "type": "string",
-                    "format": "binary",
-                    "example": "https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg"
+                    "format": "binary"
                   }
                 }
               }
@@ -255,7 +257,7 @@
                   "properties": {
                     "status": {
                       "type": "integer",
-                      "example": 201
+                      "example": 200
                     },
                     "message": {
                       "type": "string",
@@ -272,6 +274,9 @@
           },
           "401": {
             "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
           }
         }
       }
@@ -296,7 +301,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "example": "66800aa72231aa15aa0b3227"
+              "example": "65ca67e7ae7f10c88b598384"
             }
           }
         ],
@@ -382,6 +387,11 @@
                     "type": "string",
                     "example": "johndoe@example.com"
                   },
+                  "isFavourite": {
+                    "description": "Whether contact is favourite",
+                    "type": "boolean",
+                    "example": true
+                  },
                   "contactType": {
                     "description": "Contact type",
                     "type": "string",
@@ -390,19 +400,12 @@
                       "home",
                       "personal"
                     ],
-                    "default": "personal",
                     "example": "home"
-                  },
-                  "isFavourite": {
-                    "description": "Whether contact is favourite",
-                    "type": "boolean",
-                    "example": true
                   },
                   "photo": {
                     "description": "Contact's photo",
                     "type": "string",
-                    "format": "binary",
-                    "example": "https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg"
+                    "format": "binary"
                   }
                 }
               }
@@ -511,16 +514,16 @@
       "contact": {
         "type": "object",
         "required": [
+          "_id",
           "name",
-          "phoneNumber",
-          "email",
-          "isFavourite",
-          "contactType",
-          "updatedAt",
-          "createdAt",
-          "userId"
+          "phoneNumber"
         ],
         "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Contact's id",
+            "example": "65e4decdd286b30065d54af9"
+          },
           "name": {
             "type": "string",
             "description": "Contact's name",
@@ -542,18 +545,6 @@
             "description": "Contact favourite",
             "example": true
           },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When was created",
-            "example": "2024-06-06T17:48:14.102Z"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When was updated",
-            "example": "2024-06-06T17:48:14.102Z"
-          },
           "contactType": {
             "type": "string",
             "description": "Contact's type",
@@ -565,14 +556,14 @@
             "example": "home"
           },
           "userId": {
+            "description": "User's id",
             "type": "string",
-            "description": "Contacts user id",
-            "example": "667d6460f307fed962c9642e"
+            "example": "65e4decdd286b30065d54af9"
           },
           "photo": {
+            "description": "Link to contact's photo",
             "type": "string",
-            "format": "binary",
-            "description": "https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg"
+            "example": "https://res.cloudinary.com/uqwgdu/image/upload/image.png"
           }
         }
       }

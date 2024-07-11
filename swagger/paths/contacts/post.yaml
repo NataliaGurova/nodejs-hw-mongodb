@@ -26,25 +26,20 @@ requestBody:
             description: "Contact's email"
             type: string
             example: johndoe@example.com
+          isFavourite:
+            description: 'Whether contact is favourite'
+            type: boolean
+            example: true
           contactType:
             description: 'Contact type'
             type: string
             enum: ['work', 'home', 'personal']
             default: personal
             example: home
-          isFavourite:
-            description: 'Whether contact is favourite'
-            type: boolean
-            example: true
-          # parentId:
-          #   description: "Contact's parent id"
-          #   type: string
-          #   example: 65e4decdd286b30065d54af9
           photo:
             description: "Contact's photo"
             type: string
             format: binary
-            example: https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg
 responses:
   '201':
     description: Creates a contact
@@ -59,7 +54,7 @@ responses:
           properties:
             status:
               type: integer
-              example: 201
+              example: 200
             message:
               type: string
               example: Successfully created a contact!
@@ -68,4 +63,6 @@ responses:
               $ref: ../../components/schemas/contact.yaml
   '401':
     $ref: ../../components/responses/401.yaml
+  '404':
+    $ref: '../../components/responses/404.yaml'
 

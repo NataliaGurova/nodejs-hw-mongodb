@@ -30,21 +30,19 @@ requestBody:
             description: "Contact's email"
             type: string
             example: johndoe@example.com
-          contactType:
-            description: 'Contact type'
-            type: string
-            enum: ['work', 'home', 'personal']
-            default: personal
-            example: home
           isFavourite:
             description: 'Whether contact is favourite'
             type: boolean
             example: true
+          contactType:
+            description: 'Contact type'
+            type: string
+            enum: ['work', 'home', 'personal']
+            example: home
           photo:
             description: "Contact's photo"
             type: string
             format: binary
-            example: https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg
 responses:
   '200':
     description: Updates a contact

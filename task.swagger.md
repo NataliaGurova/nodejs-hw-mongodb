@@ -245,458 +245,58 @@ POST /contacts
 
 ==================================================
 
-# swagger/paths/studens/{id}/get.yaml
-tags:
-  - Students
-summary: Get student by id
-operationId: getStudent
-description: 'Get student by id'
-security:
-  - bearerAuth: []
-parameters:
-  - in: path
-    name: id
-    required: true
-    schema:
-      type: string
-      example: '65ca67e7ae7f10c88b598384'
-responses:
-  '200':
-    description: 'Get student by id'
-    content:
-      application/json:
-        schema:
-          type: object
-          required:
-            - status
-            - message
-            - data
-          properties:
-            status:
-              type: integer
-              example: 200
-            message:
-              type: string
-              example: Successfully found student with id 65ca67e7ae7f10c88b598384!
-            data:
-              type: object
-              $ref: '../../../components/schemas/student.yaml'
-  '401':
-    $ref: '../../../components/responses/401.yaml'
-==========
-
-
-========!!!!====
-tags:
-  - Students
-summary: Create student
-operationId: createStudent
-description: 'Create a student with payload'
-security:
-  - bearerAuth: []
-requestBody:
-  content:
-    multipart/form-data:
-      schema:
-        type: object
-        required:
-          - name
-          - age
-          - gender
-          - avgMark
-          - parentId
-        properties:
-          name:
-            description: "Student's name"
-            type: string
-            example: 'John Doe'
-          age:
-            description: "Student's age"
-            type: number
-            example: 12
-          gender:
-            description: "Student's age"
-            type: string
-            enum: ['male', 'female', 'other']
-          avgMark:
-            description: "Student's average mark. Should be between 1 and 12"
-            type: number
-            example: 9.7
-          onDuty:
-            description: 'Whether is student on duty'
-            type: boolean
-            example: false
-          parentId:
-            description: "Student's parent id"
-            type: string
-            example: 65e4decdd286b30065d54af9
-          photo:
-            description: "Student''s photo"
-            type: string
-            format: binary
-responses:
-  '201':
-    description: Creates a student
-    content:
-      application/json:
-        schema:
-          type: object
-          required:
-            - status
-            - message
-            - data
-          properties:
-            status:
-              type: integer
-              example: 200
-            message:
-              type: string
-              example: Successfully created a student!
-            data:
-              type: object
-              $ref: '../../components/schemas/student.yaml'
-  '401':
-    $ref: '../../components/responses/401.yaml'
-===============
 
 
 
+# swagger/components/schemas/student.yaml
 
-Для цього створимо у файлі src/constants/index.js константу SWAGGER_PATH :
-
-// src/constants/index.js
-
-/* Інший код файлу */
-
-export const SWAGGER_PATH = path.join(process.cwd(), 'docs', 'swagger.json');
-
-
-
-У файлі src/middlewares/swaggerDocs.js опишемо функцію swaggerDocs :
-
-// src/middlewares/swaggerDocs.js
-
-import createHttpError from 'http-errors';
-import swaggerUI from 'swagger-ui-express';
-import fs from 'node:fs';
-
-import { SWAGGER_PATH } from '../constants/index.js';
-
-export const swaggerDocs = () => {
-  try {
-    const swaggerDoc = JSON.parse(fs.readFileSync(SWAGGER_PATH).toString());
-    return [...swaggerUI.serve, swaggerUI.setup(swaggerDoc)];
-  } catch (err) {
-    return (req, res, next) =>
-      next(createHttpError(500, "Can't load swagger docs"));
-  }
-};
-
-
-
-Застосуємо цю функцію до роуту /api-docs :
-
-// src/server.js
-
-import { swaggerDocs } from './middlewares/swaggerDocs.js';
-
-/* Інший код файлу */
-
-  app.use('/uploads', express.static(UPLOAD_DIR));
-  app.use('/api-docs', swaggerDocs());
-
-/* Інший код файлу */
-
-
-
-Тепер ми можемо виконати в терміналі команду npm run build-docs, яку ми описали раніше в файлі package.json, для того, щоб збілдити документацію для Swagger. Далі запускаємо наш сервер командою npm run dev і можемо у браузері перейти за маршрутом https://localhost:3000/api-docs і побачити нашу документацію.
-
-
-
-# swagger/paths/studens/{id}/get.yaml
-tags:
-  - Students
-summary: Get student by id
-operationId: getStudent
-description: 'Get student by id'
-security:
-  - bearerAuth: []
-parameters:
-  - in: path
-    name: id
-    required: true
-    schema:
-      type: string
-      example: '65ca67e7ae7f10c88b598384'
-responses:
-  '200':
-    description: 'Get student by id'
-    content:
-      application/json:
-        schema:
-          type: object
-          required:
-            - status
-            - message
-            - data
-          properties:
-            status:
-              type: integer
-              example: 200
-            message:
-              type: string
-              example: Successfully found student with id 65ca67e7ae7f10c88b598384!
-            data:
-              type: object
-              $ref: '../../../components/schemas/student.yaml'
-  '401':
-    $ref: '../../../components/responses/401.yaml'
-
-
-=================-------------==============
-
-openapi: 3.1.0
-info:
-  version: 1.0.0
-  title: Contacts-app
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  description: >
-    This is a documentation of contacts app
-tags:
-  - name: Contacts
-    description: Operations about contacts.
-  - name: Auth
-    description: Auth operations.
-servers:
-  - url: http://localhost:3000
-  - url: # посилання на задеплоєний сайт
-paths:
-  /contacts:
-    get:
-      tags:
-        - Contacts
-      summary: Get list of contacts
-      operationId: getContact
-      description: 'Get list of contacts with this endpoint'
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            example: 1
-        - in: query
-          name: perPage
-          schema:
-            type: integer
-            example: 10
-        - in: query
-          name: sortBy
-          schema:
-            type: string
-            example: 'name'
-          description: "All contact's fields can be mentioned. Default value - _id"
-        - in: query
-          name: sortOrder
-          schema:
-            type: string
-            enum: ['asc', 'desc']
-            example: 'asc'
-        - in: query
-          name: contactType
-          schema:
-            type: string
-            enum: ['work', 'home', 'personal']
-            example: 'home'
-        - in: query
-          name: isFavourite
-          schema:
-            type: boolean
-            example: true
-      responses:
-        '200':
-          description: 'Successfully found contacts!'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                  - data
-                properties:
-                  status:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Successfully found contacts!
-                  data:
-                    type: object
-                    required:
-                      - data
-                      - page
-                      - perPage
-                      - totalItems
-                      - totalPages
-                      - hasNextPage
-                      - hasPreviousPage
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Contact'
-                      page:
-                        type: number
-                        example: 2
-                      perPage:
-                        type: number
-                        example: 4
-                      totalItems:
-                        type: number
-                        example: 4
-                      totalPages:
-                        type: number
-                        example: 4
-                      hasNextPage:
-                        type: boolean
-                        example: false
-                      hasPreviousPage:
-                        type: boolean
-                        example: true
-        '401':
-          $ref: '#/components/responses/401'
-    post:
-      tags:
-        - Contacts
-      summary: Create contact
-      operationId: createContact
-      description: 'Create a contact with payload'
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - name
-                - phoneNumber
-              properties:
-                name:
-                  description: "Contact's name"
-                  type: string
-                  example: John Doe
-                phoneNumber:
-                  description: "Contact's phone number"
-                  type: string
-                  example: '+386666666666'
-                email:
-                  description: "Contact's email"
-                  type: string
-                  example: johndoe@example.com
-                contactType:
-                  description: 'Contact type'
-                  type: string
-                  enum: ['work', 'home', 'personal']
-                  default: personal
-                  example: home
-                isFavourite:
-                  description: 'Whether contact is favourite'
-                  type: boolean
-                  example: true
-                photo:
-                  description: "Contact's photo"
-                  type: string
-                  format: binary
-                  example: https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg
-      responses:
-        '201':
-          description: Creates a contact
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - status
-                  - message
-                  - data
-                properties:
-                  status:
-                    type: integer
-                    example: 201
-                  message:
-                    type: string
-                    example: Successfully created a contact!
-                  data:
-                    type: object
-                    $ref: '#/components/schemas/Contact'
-        '401':
-          $ref: '#/components/responses/401'
-  /contacts/{contactId}:
-    get:
-      $ref: '#/components/schemas/getContactById'
-    patch:
-      $ref: '#/components/schemas/patchContact'
-    delete:
-      $ref: '#/components/schemas/deleteContact'
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-  schemas:
-    Contact:
-      type: object
-      properties:
-        id:
-          type: string
-          example: '1'
-        name:
-          type: string
-          example: 'John Doe'
-        phoneNumber:
-          type: string
-          example: '+386666666666'
-        email:
-          type: string
-          example: 'johndoe@example.com'
-        contactType:
-          type: string
-          example: 'home'
-        isFavourite:
-          type: boolean
-          example: true
-        photo:
-          type: string
-          example: 'https://res.cloudinary.com/dc3hfupdd/image/upload/image.jpg'
-  responses:
-    401:
-      description: Unauthorized
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              status:
-                type: integer
-                example: 401
-              message:
-                type: string
-                example: 'Unauthorized'
+type: object
+required:
+  - _id
+  - name
+  - age
+  - gender
+  - avgMark
+  - onDuty
+properties:
+  _id:
+    description: "Student's id"
+    type: string
+    example: 65e4decdd286b30065d54af9
+  name:
+    description: "Student's name"
+    type: string
+    example: 'John Doe'
+  age:
+    description: "Student's age"
+    type: number
+    example: 12
+  gender:
+    description: "Student's age"
+    type: string
+    enum: ['male', 'female', 'other']
+  avgMark:
+    description: "Student's average mark. Should be between 1 and 12"
+    type: number
+    example: 9.7
+  onDuty:
+    description: 'Whether is student on duty'
+    type: boolean
+    example: false
+  parentId:
+    description: "Student's parent id"
+    type: string
+    example: 65e4decdd286b30065d54af9
+  photo:
+    description: "Link to student's photo"
+    type: string
+    example: <https://res.cloudinary.com/uqwgdu/image/upload/image.png>
 
 
 
 
 
 
-=================================================================================================================================
-
-Документація GET
-Давайте для практики створимо в docs/openapi.yaml ще один ендпоінт GET /students:
 
 # /docs/openapi.yaml
 openapi: 3.1.0
@@ -732,12 +332,48 @@ components:
       scheme: bearer
 
 
+# swagger/paths/studens/{id}/get.yaml
+tags:
+  - Students
+summary: Get student by id
+operationId: getStudent
+description: 'Get student by id'
+security:
+  - bearerAuth: []
+parameters:
+  - in: path
+    name: id
+    required: true
+    schema:
+      type: string
+      example: '65ca67e7ae7f10c88b598384'
+responses:
+  '200':
+    description: 'Get student by id'
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+            - data
+          properties:
+            status:
+              type: integer
+              example: 200
+            message:
+              type: string
+              example: Successfully found student with id 65ca67e7ae7f10c88b598384!
+            data:
+              type: object
+              $ref: '../../../components/schemas/student.yaml'
+  '401':
+    $ref: '../../../components/responses/401.yaml'
 
-
-І опишемо його у файлі swagger/paths/students/get.yaml:
-
+============
 #/swagger/paths/students/get.yaml
-
+============
 tags:
   - Students
 summary: Get list of students
@@ -848,10 +484,180 @@ responses:
   '401':
     $ref: '../../components/responses/401.yaml'
 
+===========
+#/swagger/paths/students/post.yaml
+===========
+tags:
+  - Students
+summary: Create student
+operationId: createStudent
+description: 'Create a student with payload'
+security:
+  - bearerAuth: []
+requestBody:
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        required:
+          - name
+          - age
+          - gender
+          - avgMark
+          - parentId
+        properties:
+          name:
+            description: "Student's name"
+            type: string
+            example: 'John Doe'
+          age:
+            description: "Student's age"
+            type: number
+            example: 12
+          gender:
+            description: "Student's age"
+            type: string
+            enum: ['male', 'female', 'other']
+          avgMark:
+            description: "Student's average mark. Should be between 1 and 12"
+            type: number
+            example: 9.7
+          onDuty:
+            description: 'Whether is student on duty'
+            type: boolean
+            example: false
+          parentId:
+            description: "Student's parent id"
+            type: string
+            example: 65e4decdd286b30065d54af9
+          photo:
+            description: "Student''s photo"
+            type: string
+            format: binary
+responses:
+  '201':
+    description: Creates a student
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+            - data
+          properties:
+            status:
+              type: integer
+              example: 200
+            message:
+              type: string
+              example: Successfully created a student!
+            data:
+              type: object
+              $ref: '../../components/schemas/student.yaml'
+  '401':
+    $ref: '../../components/responses/401.yaml'
+
+
+# swagger/paths/contacts/{id}/delete.yaml
+
+tags:
+  - Contacts
+summary: Delete contact by id
+operationId: deleteContact
+description: 'Delete contact by id'
+security:
+  - bearerAuth: []
+parameters:
+  - in: path
+    name: id
+    required: true
+    schema:
+      type: string
+      example: '65ca67e7ae7f10c88b598384'
+responses:
+  '204':
+    description: 'Delete contact by id'
+
+  '404':
+    $ref: '../../../components/responses/404.yaml'
+  '401':
+    $ref: '../../../components/responses/401.yaml'
+  '500':
+    $ref: '../../../components/responses/500.yaml'
 
 
 
-Тут для нас є два нових моменти:
-
-В полі parameters у нас зʼявилися нові значення - in: query замість in: path . Таким чином ми вказуємо, що це query parameters, тобто ті, що ідуть після символа ?.
-У 200 відповіді в полі data зʼявляється ще одне кладене поле із такою ж назвою з типом array. Для такого типу схеми ми можемо вказати поле items, де вказати, як будуть виглядати елементи цього масива
+# swagger/paths/contacts/{id}/patch.yaml
+tags:
+  - Contacts
+summary: Patch contact by id
+operationId: patchContact
+description: 'Patch contact by id'
+security:
+  - bearerAuth: []
+parameters:
+  - in: path
+    name: id
+    required: true
+    schema:
+      type: string
+      example: '65ca67e7ae7f10c88b598384'
+requestBody:
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        properties:
+          name:
+            description: "Contact's name"
+            type: string
+            example: 'John Doe'
+          phoneNumber:
+            description: "Contact's phoneNumber"
+            type: string
+            example: '+3800000000032'
+          email:
+            description: "Contact's email"
+            type: string
+            example: 'hubertuskenkel@gmail.com'
+          isFavourite:
+            description: "Contact's isFavourite. Should be true or false"
+            type: boolean
+            example: false
+          contactType:
+            description: "Contact's type of phone number"
+            type: string
+            enum: ['work', 'home', 'personal']
+            example: personal
+          photo:
+            description: "Link to contact's photo"
+            type: string
+            format: binary
+responses:
+  '200':
+    description: 'Patch contact by id'
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - status
+            - message
+            - data
+          properties:
+            status:
+              type: integer
+              example: 200
+            message:
+              type: string
+              example: Successfully patched a contact with id 65ca67e7ae7f10c88b598384!
+            data:
+              type: object
+              $ref: '../../../components/schemas/contact.yaml'
+  '404':
+    $ref: '../../../components/responses/404.yaml'
+  '401':
+    $ref: '../../../components/responses/401.yaml'
+  '500':
+    $ref: '../../../components/responses/500.yaml'

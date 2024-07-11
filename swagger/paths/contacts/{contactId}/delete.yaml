@@ -15,6 +15,8 @@ parameters:
 responses:
   '204':
     description: Contact deleted successfully
+
+    
     content:
       application/json:
         schema:
