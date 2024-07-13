@@ -89,7 +89,7 @@
                 "home",
                 "personal"
               ],
-              "example": "home"
+              "example": "personal"
             }
           },
           {
@@ -230,12 +230,13 @@
                       "personal"
                     ],
                     "default": "personal",
-                    "example": "home"
+                    "example": "personal"
                   },
                   "photo": {
                     "description": "Contact's photo",
                     "type": "string",
-                    "format": "binary"
+                    "format": "binary",
+                    "example": "https://res.cloudinary.com/uqwgdu/image/upload/image.png"
                   }
                 }
               }
@@ -400,7 +401,7 @@
                       "home",
                       "personal"
                     ],
-                    "example": "home"
+                    "example": "personal"
                   },
                   "photo": {
                     "description": "Contact's photo",
@@ -553,7 +554,7 @@
               "home",
               "personal"
             ],
-            "example": "home"
+            "example": "personal"
           },
           "userId": {
             "description": "User's id",
