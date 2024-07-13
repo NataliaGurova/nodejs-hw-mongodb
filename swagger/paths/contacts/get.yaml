@@ -33,7 +33,7 @@ parameters:
     schema:
       type: string
       enum: ['work', 'home', 'personal']
-      example: 'home'
+      example: 'personal'
   - in: query
     name: isFavourite
     schema:
