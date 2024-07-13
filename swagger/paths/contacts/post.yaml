@@ -40,6 +40,7 @@ requestBody:
             description: "Contact's photo"
             type: string
             format: binary
+            example: 'https://res.cloudinary.com/uqwgdu/image/upload/image.png'
 responses:
   '201':
     description: Creates a contact
@@ -64,5 +65,5 @@ responses:
   '401':
     $ref: ../../components/responses/401.yaml
   '404':
-    $ref: '../../components/responses/404.yaml'
+    $ref: ../../components/responses/404.yaml
 
